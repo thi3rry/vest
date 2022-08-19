@@ -10,17 +10,6 @@ import { produceSuiteResult, SuiteResult } from 'produceSuiteResult';
 import { SuiteRunResult, produceFullResult } from 'produceSuiteRunResult';
 import { initBus, Events } from 'vestBus';
 
-type CreateProperties = {
-  get: () => SuiteResult;
-  reset: () => void;
-  resetField: (fieldName: string) => void;
-  remove: (fieldName: string) => void;
-};
-
-export type Suite<T extends CB> = {
-  (...args: Parameters<T>): SuiteRunResult;
-} & CreateProperties;
-
 /**
  * Creates a new validation suite
  *
@@ -34,7 +23,6 @@ export type Suite<T extends CB> = {
  */
 function create<T extends CB>(suiteName: SuiteName, suiteCallback: T): Suite<T>;
 function create<T extends CB>(suiteCallback: T): Suite<T>;
-// eslint-disable-next-line max-lines-per-function
 function create<T extends CB>(
   ...args: [suiteName: SuiteName, suiteCallback: T] | [suiteCallback: T]
 ): Suite<T> {
@@ -54,19 +42,10 @@ function create<T extends CB>(
   // State reference - this holds the actual state values
   const stateRef = createStateRef(state, { suiteId: seq(), suiteName });
 
-  interface IVestSuite {
-    (...args: Parameters<T>): SuiteRunResult;
-
-    get: () => SuiteResult;
-    reset: () => void;
-    resetField: (fieldName: string) => void;
-    remove: (fieldName: string) => void;
-  }
-
   // Create base context reference. All hooks will derive their data from this
   const ctxRef = { stateRef, bus };
 
-  const suite: IVestSuite = assign(
+  const suite: Suite<T> = assign(
     // Bind the suite body to the context
     context.bind(ctxRef, (...args: unknown[]) => {
       // Reset the state. Migrates current test objects to `prev` array.
@@ -103,3 +82,11 @@ function create<T extends CB>(
 export default create;
 
 export type SuiteName = string | void;
+
+export type Suite<T extends CB> = {
+  (...args: Parameters<T>): SuiteRunResult;
+  get: () => SuiteResult;
+  reset: () => void;
+  resetField: (fieldName: string) => void;
+  remove: (fieldName: string) => void;
+};
